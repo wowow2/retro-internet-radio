@@ -142,7 +142,7 @@ def resolve_all_stations() -> None:
     print("[SYSTEM] Resolving live station URLs via Radio-Browser API...")
     for station in STATION_LIST:
         station.resolved_url, source = _resolve_one(station, cache)
-        print(f"  [{source:<8}] {station.name:<16} -> {station.resolved_url}")
+        print(f"  [{source}] {station.name:<16} -> {station.resolved_url}")
 
     _save_cache(cache)
 
