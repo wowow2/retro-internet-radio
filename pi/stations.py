@@ -35,13 +35,13 @@ class RadioStation:
 STATION_LIST: List[RadioStation] = [
     RadioStation(
         name="CBC Radio One",
-        sub="Canada / Edm News",
+        sub="Canada News",
         uuid="e9e2c2ac-1916-4f2e-a7ba-a3669bea3bcd",
         fallback_url="https://cbcradiolive.akamaized.net/hls/live/2041041/ES_R1MED/master.m3u8",
     ),
     RadioStation(
         name="880 CHED",
-        sub="News, Talk, Oil",
+        sub="Edm News",
         uuid="961eeb59-0601-11e8-ae97-52543be04c81",
         fallback_url="https://corus.leanstream.co/CHEDAM-MP3",
     ),
@@ -77,7 +77,7 @@ STATION_LIST: List[RadioStation] = [
     ),
     RadioStation(
         name="Lofi Girl",
-        sub="MacEwan Study",
+        sub="Lofi",
         uuid="56b0652e-f920-423e-aee2-5b72dda4da66",
         fallback_url="http://stream.zeno.fm/f3wvbbqmdg8uv",
     ),
