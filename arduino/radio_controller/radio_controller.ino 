@@ -2,6 +2,8 @@
  * radio_controller.ino - Physical Controller for Retro Internet Radio
  */
 
+#include <LiquidCrystal.h>
+
 // PIN DEFINITIONS & CONSTANTS
 const int PIN_LCD_RS = 7;
 const int PIN_LCD_EN = 8;
