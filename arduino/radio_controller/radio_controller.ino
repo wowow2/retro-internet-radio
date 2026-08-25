@@ -16,9 +16,9 @@ const int PIN_POT_TUNER = A0;
 const int PIN_BTN_STOP  = 2;
 
 const int TOTAL_STATIONS       = 8;     // Presets 0 through 7
-const int ADC_JITTER_DEADBAND  = 8;     // Noise filter
-const unsigned long TUNE_SETTLE_MS  = 200;   // Settle delay before tuning
-const unsigned long BTN_DEBOUNCE_MS = 50;    // Button debounce interval
+const int ADC_JITTER_DEADBAND  = 6;     // Noise filter
+const unsigned long TUNE_SETTLE_MS  = 75;   // Settle delay before tuning
+const unsigned long BTN_DEBOUNCE_MS = 20;    // Button debounce interval
 
 // LCD instance (RS, EN, D4, D5, D6, D7)
 LiquidCrystal lcd(PIN_LCD_RS, PIN_LCD_EN, PIN_LCD_D4, PIN_LCD_D5, PIN_LCD_D6, PIN_LCD_D7);
