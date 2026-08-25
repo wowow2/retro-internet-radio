@@ -73,7 +73,7 @@ void checkTuner() {
 }
 
 
-// Reads stop button with debouncing
+// Reads button with debouncing
 void checkButton() {
   int reading = digitalRead(PIN_BTN_STOP);
 
@@ -86,7 +86,7 @@ void checkButton() {
     if (reading != confirmedState) {
       confirmedState = reading;
       if (confirmedState == LOW) {
-        Serial.println("CMD:STOP");
+        Serial.println("CMD:TOGGLE"); // Sends Toggle command on click
       }
     }
   }

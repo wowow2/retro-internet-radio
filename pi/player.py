@@ -85,3 +85,16 @@ class RadioPlayer:
 
         self.station_idx = index
         self.lcd.set_status("PLAYING")
+
+    def toggle(self) -> None:
+        """Toggles between Play and Pause for the currently selected station."""
+        if self.is_playing():
+            print("[RADIO] Pause requested -> Stopping audio.")
+            self.stop()
+            station = stations.get_station(self.station_idx)
+            name = station.name if station else "Retro Radio"
+            self.lcd.display_station(name, "* Paused *")
+        else:
+            target_idx = self.station_idx if self.station_idx >= 0 else 0
+            print(f"[RADIO] Resume requested -> Playing station [{target_idx + 1}].")
+            self.tune(target_idx, force=True)

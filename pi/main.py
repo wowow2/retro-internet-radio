@@ -43,8 +43,8 @@ def main():
                         player.tune(idx)
                     except (ValueError, IndexError):
                         pass
-                elif cmd == "CMD:STOP":
-                    player.stop()
+                elif cmd in ("CMD:STOP", "CMD:TOGGLE"):
+                    player.toggle()
 
         # Supervision check
         if player.has_crashed():
