@@ -66,7 +66,7 @@ STATION_LIST: List[RadioStation] = [
     RadioStation(
         name="BBC World News",
         sub="Global Stories",
-        uuid="14b6c684-bb7c-4926-b2a3-fd5a02bf7867",
+        uuid="",
         fallback_url="http://stream.live.vc.bbcmedia.co.uk/bbc_world_service",
     ),
     RadioStation(
