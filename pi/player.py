@@ -1,100 +1,137 @@
 """
-player.py - Audio streaming lifecycle and mpv process supervisor.
+player.py - Ultra-Low-Latency mpv process supervisor with instant IPC switching.
 """
 
 import subprocess
+import json
+import socket
+import os
+import time
 from typing import Optional
 import config
 from display import LCDDisplay
 import stations
 
+MPV_SOCKET = "/tmp/mpv-socket"
+
 
 class RadioPlayer:
-    """Owns mpv audio streaming process lifecycle and station switching."""
-
     def __init__(self, lcd: LCDDisplay):
         self.lcd = lcd
         self.proc: Optional[subprocess.Popen] = None
         self.station_idx: int = -1
+        self._is_paused: bool = False
+
+    def _send_ipc(self, command: list) -> bool:
+        """Sends an instant JSON command to running mpv process (<5ms)."""
+        if not os.path.exists(MPV_SOCKET):
+            return False
+        try:
+            with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as client:
+                client.settimeout(0.2)
+                client.connect(MPV_SOCKET)
+                payload = json.dumps({"command": command}) + "\n"
+                client.sendall(payload.encode('utf-8'))
+            return True
+        except Exception:
+            return False
 
     def is_playing(self) -> bool:
-        return self.proc is not None and self.proc.poll() is None
+        return self.proc is not None and self.proc.poll() is None and not self._is_paused
 
     def has_crashed(self) -> bool:
-        """True if playback was expected but the process died unexpectedly."""
         return self.proc is not None and self.proc.poll() is not None
 
     def stop(self) -> None:
-        """Stops active audio stream."""
-        if not self.proc:
-            return
-        self.proc.terminate()
-        try:
-            self.proc.wait(timeout=config.MPV_PROC_STOP_TIMEOUT)
-        except subprocess.TimeoutExpired:
-            self.proc.kill()
-        self.proc = None
+        """Instantly pauses playback via IPC."""
+        if self._send_ipc(["set_property", "pause", True]):
+            self._is_paused = True
+        elif self.proc:
+            self.proc.terminate()
+            self.proc = None
         self.lcd.set_status("STOPPED")
 
-    def _launch_stream(self, url: str) -> bool:
+    def _spawn_mpv(self, url: str) -> bool:
+        if os.path.exists(MPV_SOCKET):
+            try:
+                os.remove(MPV_SOCKET)
+            except OSError:
+                pass
+
+        # Low-latency streaming flags: skips probing delays & optimizes ALSA buffer
+        cmd = [
+            "mpv",
+            "--no-video",
+            f"--input-ipc-server={MPV_SOCKET}",
+            f"--volume={config.DEFAULT_VOLUME}",
+            "--ao=alsa",
+            "--audio-device=alsa/plughw:Loopback,0,0",
+            "--audio-format=s16",
+            "--demuxer-lavf-probesize=32768",
+            "--demuxer-lavf-analyzeduration=0.2",
+            "--cache=yes",
+            "--cache-secs=2",
+            url
+        ]
+
         try:
-            self.proc = subprocess.Popen([
-                "mpv",
-                "--no-video",
-                f"--volume={config.DEFAULT_VOLUME}",
-                url
-            ])
+            self.proc = subprocess.Popen(cmd)
+            self._is_paused = False
             return True
-        except (FileNotFoundError, PermissionError, OSError) as e:
+        except Exception as e:
             print(f"[ERROR] Failed to spawn mpv: {e}")
             self.proc = None
             return False
 
     def handle_crash(self) -> None:
-        """Cleans up internal state if mpv died unexpectedly."""
         station = stations.get_station(self.station_idx)
         name = station.name if station else "Unknown"
-        print(f"[WARNING] mpv exited unexpectedly while playing: {name}")
+        print(f"[WARNING] Stream connection lost for: {name}")
         self.proc = None
+        self._is_paused = False
         self.lcd.set_status("ERROR")
 
-    def tune(self, index: int) -> None:
-        """Tunes to a station by index and updates LCD & player state."""
+    def tune(self, index: int, force: bool = False) -> None:
         total = stations.get_total_stations()
         if index < 0 or index >= total:
             return
-        if index == self.station_idx and self.is_playing():
-            return  # Already playing this preset
+        if index == self.station_idx and self.is_playing() and not force:
+            return
 
         station = stations.get_station(index)
         if not station or not station.resolved_url:
-            print(f"[ERROR] No stream URL resolved for index {index}")
             self.lcd.display_station("Station Error", "No Stream URL")
             self.lcd.set_status("ERROR")
             return
 
-        print(f"\n[RADIO] Tuning to [{index + 1}/{total}]: {station.name} ({station.sub})")
-        print(f"        Stream: {station.resolved_url}")
-
-        self.stop()
         self.lcd.display_station(station.name, station.sub)
-
-        if not self._launch_stream(station.resolved_url):
-            self.lcd.set_status("ERROR")
-            return
-
         self.station_idx = index
         self.lcd.set_status("PLAYING")
 
+        if self.proc and self.proc.poll() is None:
+            if self._send_ipc(["loadfile", station.resolved_url, "replace"]):
+                self._send_ipc(["set_property", "pause", False])
+                self._is_paused = False
+                return
+
+        # 3. Otherwise spawn fresh mpv
+        self._spawn_mpv(station.resolved_url)
+
     def toggle(self) -> None:
-        """Toggles between Play and Pause for the currently selected station."""
+        """play/pause toggle"""
         if self.is_playing():
-            print("[RADIO] Pause requested -> Stopping audio.")
-            self.stop()
+            self._send_ipc(["set_property", "pause", True])
+            self._is_paused = True
             station = stations.get_station(self.station_idx)
             name = station.name if station else "Retro Radio"
             self.lcd.display_station(name, "* Paused *")
         else:
-            target_idx = self.station_idx if self.station_idx >= 0 else 0
-            print(f"[RADIO] Resume requested -> Playing station [{target_idx + 1}].")
-            self.tune(target_idx, force=True)
+            if self.proc and self.proc.poll() is None:
+                self._send_ipc(["set_property", "pause", False])
+                self._is_paused = False
+                station = stations.get_station(self.station_idx)
+                if station:
+                    self.lcd.display_station(station.name, station.sub)
+            else:
+                target_idx = self.station_idx if self.station_idx >= 0 else 0
+                self.tune(target_idx, force=True)
