@@ -35,6 +35,7 @@ def main():
 
         # Process serial commands from Arduino front panel (drain all queued lines per tick)
         if arduino.is_connected:
+            pending_vol = None
             while True:
                 cmd = arduino.read_command()
                 if not cmd:
@@ -47,12 +48,13 @@ def main():
                         pass
                 elif cmd.startswith("VOL:"):
                     try:
-                        vol = int(cmd.split(":")[1])
-                        player.show_volume(vol)
+                        pending_vol = int(cmd.split(":")[1])
                     except (ValueError, IndexError):
                         pass
                 elif cmd in ("CMD:STOP", "CMD:TOGGLE"):
                     player.toggle()
+            if pending_vol is not None:
+                player.show_volume(pending_vol)
 
         # Overlay expiry (restores L2 after Vol display)
         player.tick()

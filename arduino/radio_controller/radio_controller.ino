@@ -17,9 +17,10 @@ const int PIN_BTN_STOP  = 2;
 
 const int TOTAL_STATIONS       = 8;
 const int ADC_JITTER_DEADBAND  = 6;
+const int VOL_ADC_DEADBAND     = 12;
 const unsigned long TUNE_SETTLE_MS  = 40;
 const unsigned long BTN_DEBOUNCE_MS = 20;
-const unsigned long VOL_THROTTLE_MS = 30;
+const unsigned long VOL_THROTTLE_MS = 100;
 
 LiquidCrystal lcd(PIN_LCD_RS, PIN_LCD_EN, PIN_LCD_D4, PIN_LCD_D5, PIN_LCD_D6, PIN_LCD_D7);
 
@@ -69,11 +70,12 @@ void checkTuner() {
 
 void checkVolume() {
   if (millis() - lastVolSend < VOL_THROTTLE_MS) return;
+  analogRead(PIN_POT_VOL);
   int raw = analogRead(PIN_POT_VOL);
-  if (abs(raw - lastRawVol) > ADC_JITTER_DEADBAND) {
-    lastRawVol = raw;
+  if (abs(raw - lastRawVol) > VOL_ADC_DEADBAND) {
     int vol = map(raw, 0, 1023, 0, 100);
     if (abs(vol - lastCommittedVol) >= 2) {
+      lastRawVol = raw;
       Serial.print("VOL:");
       Serial.println(vol);
       lastCommittedVol = vol;
@@ -133,6 +135,7 @@ void setup() {
   if (currentStation >= TOTAL_STATIONS) currentStation = TOTAL_STATIONS - 1;
 
   lastRawVol = analogRead(PIN_POT_VOL);
+  lastCommittedVol = map(lastRawVol, 0, 1023, 0, 100);
   lastButtonState = digitalRead(PIN_BTN_STOP);
 }
 
