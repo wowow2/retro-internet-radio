@@ -48,11 +48,14 @@ def main():
                 elif cmd.startswith("VOL:"):
                     try:
                         vol = int(cmd.split(":")[1])
-                        player.set_volume(vol)
+                        player.show_volume(vol)
                     except (ValueError, IndexError):
                         pass
                 elif cmd in ("CMD:STOP", "CMD:TOGGLE"):
                     player.toggle()
+
+        # Overlay expiry (restores L2 after Vol display)
+        player.tick()
 
         # Supervision check
         if player.has_crashed():

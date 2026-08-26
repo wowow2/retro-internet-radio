@@ -31,6 +31,10 @@ class LCDDisplay:
         self.write_line(1, name)
         self.write_line(2, sub)
 
+    def show_volume(self, volume: int) -> None:
+        """Shows plain volume on L2, e.g. Vol: 85."""
+        self.write_line(2, f"Vol: {volume}")
+
     def set_status(self, status: str) -> None:
         """Sends operational status (PLAYING, STOPPED, ERROR)."""
         self.link.send_raw(f"STATUS:{status.upper()}\n")

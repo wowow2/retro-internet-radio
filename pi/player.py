@@ -22,6 +22,9 @@ class RadioPlayer:
         self.station_idx: int = -1
         self._is_paused: bool = False
         self.volume = config.DEFAULT_VOLUME
+        self._overlay_until: float = 0.0
+        self._saved_sub: str = ""
+        self._overlay_active: bool = False
 
     def _send_ipc(self, command: list) -> bool:
         """Sends an instant JSON command to running mpv process (<5ms)."""
@@ -50,6 +53,7 @@ class RadioPlayer:
         elif self.proc:
             self.proc.terminate()
             self.proc = None
+        self._overlay_active = False
         self.lcd.set_status("STOPPED")
 
     def _spawn_mpv(self, url: str) -> bool:
@@ -84,12 +88,16 @@ class RadioPlayer:
             self.proc = None
             return False
 
+    def _snapshot_sub(self, sub: str) -> None:
+        self._saved_sub = sub
+
     def handle_crash(self) -> None:
         station = stations.get_station(self.station_idx)
         name = station.name if station else "Unknown"
         print(f"[WARNING] Stream connection lost for: {name}")
         self.proc = None
         self._is_paused = False
+        self._overlay_active = False
         self.lcd.set_status("ERROR")
 
     def tune(self, index: int, force: bool = False) -> None:
@@ -102,10 +110,14 @@ class RadioPlayer:
         station = stations.get_station(index)
         if not station or not station.resolved_url:
             self.lcd.display_station("Station Error", "No Stream URL")
+            self._snapshot_sub("No Stream URL")
+            self._overlay_active = False
             self.lcd.set_status("ERROR")
             return
 
         self.lcd.display_station(station.name, station.sub)
+        self._snapshot_sub(station.sub)
+        self._overlay_active = False
         self.station_idx = index
         self.lcd.set_status("PLAYING")
 
@@ -126,6 +138,8 @@ class RadioPlayer:
             station = stations.get_station(self.station_idx)
             name = station.name if station else "Retro Radio"
             self.lcd.display_station(name, "* Paused *")
+            self._snapshot_sub("* Paused *")
+            self._overlay_active = False
         else:
             if self.proc and self.proc.poll() is None:
                 self._send_ipc(["set_property", "pause", False])
@@ -133,6 +147,8 @@ class RadioPlayer:
                 station = stations.get_station(self.station_idx)
                 if station:
                     self.lcd.display_station(station.name, station.sub)
+                    self._snapshot_sub(station.sub)
+                    self._overlay_active = False
             else:
                 target_idx = self.station_idx if self.station_idx >= 0 else 0
                 self.tune(target_idx, force=True)
@@ -141,3 +157,24 @@ class RadioPlayer:
         """Instantly changes volume over IPC socket without pausing audio."""
         self.volume = max(0, min(100, level))
         self._send_ipc(["set_property", "volume", self.volume])
+
+    def show_volume(self, level: int) -> None:
+        """Sets volume and shows plain Vol: <level> on L2 for VOLUME_DISPLAY_TIMEOUT."""
+        self.set_volume(level)
+        self._overlay_active = True
+        self._overlay_until = time.monotonic() + config.VOLUME_DISPLAY_TIMEOUT
+        self.lcd.show_volume(self.volume)
+
+    def tick(self) -> None:
+        """Restores L2 after volume overlay expires. Call every main loop."""
+        if self._overlay_active and time.monotonic() >= self._overlay_until:
+            self._overlay_active = False
+            if self._is_paused:
+                restore = "* Paused *"
+            elif self._saved_sub:
+                restore = self._saved_sub
+            else:
+                station = stations.get_station(self.station_idx)
+                restore = station.sub if station else "Turn Dial to Tune"
+            if self.lcd.link.is_connected:
+                self.lcd.write_line(2, restore)
