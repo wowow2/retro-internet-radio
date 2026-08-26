@@ -33,10 +33,12 @@ def main():
                 lcd.display_station("Radio Ready!", "Turn Dial to Tune")
                 lcd.set_status("STOPPED")
 
-        # Process serial commands from Arduino front panel
+        # Process serial commands from Arduino front panel (drain all queued lines per tick)
         if arduino.is_connected:
-            cmd = arduino.read_command()
-            if cmd:
+            while True:
+                cmd = arduino.read_command()
+                if not cmd:
+                    break
                 if cmd.startswith("STATION:"):
                     try:
                         idx = int(cmd.split(":")[1])

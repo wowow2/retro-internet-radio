@@ -18,6 +18,8 @@ const int PIN_BTN_STOP  = 2;
 const int TOTAL_STATIONS       = 8;
 const int ADC_JITTER_DEADBAND  = 6;
 const unsigned long TUNE_SETTLE_MS  = 75;
+const unsigned long BTN_DEBOUNCE_MS = 20;
+const unsigned long VOL_THROTTLE_MS = 30;
 
 LiquidCrystal lcd(PIN_LCD_RS, PIN_LCD_EN, PIN_LCD_D4, PIN_LCD_D5, PIN_LCD_D6, PIN_LCD_D7);
 
@@ -28,6 +30,10 @@ unsigned long settleStartTime = 0;
 
 int lastCommittedVol = -1;
 int lastRawVol = -1;
+unsigned long lastVolSend = 0;
+
+bool lastButtonState = HIGH;
+unsigned long lastButtonDebounce = 0;
 
 String serialBuffer = "";
 
@@ -62,6 +68,7 @@ void checkTuner() {
 }
 
 void checkVolume() {
+  if (millis() - lastVolSend < VOL_THROTTLE_MS) return;
   int raw = analogRead(PIN_POT_VOL);
   if (abs(raw - lastRawVol) > ADC_JITTER_DEADBAND) {
     lastRawVol = raw;
@@ -70,15 +77,26 @@ void checkVolume() {
       Serial.print("VOL:");
       Serial.println(vol);
       lastCommittedVol = vol;
+      lastVolSend = millis();
     }
   }
 }
 
 void checkButton() {
-  if (digitalRead(PIN_BTN_STOP) == LOW) {
-    Serial.println("CMD:TOGGLE");
-    delay(250);
+  int reading = digitalRead(PIN_BTN_STOP);
+  if (reading != lastButtonState) {
+    lastButtonDebounce = millis();
   }
+  if ((millis() - lastButtonDebounce) > BTN_DEBOUNCE_MS) {
+    static int confirmedState = HIGH;
+    if (reading != confirmedState) {
+      confirmedState = reading;
+      if (confirmedState == LOW) {
+        Serial.println("CMD:TOGGLE");
+      }
+    }
+  }
+  lastButtonState = reading;
 }
 
 void checkSerial() {
@@ -113,6 +131,9 @@ void setup() {
   lastRawTuner = analogRead(PIN_POT_TUNER);
   currentStation = map(lastRawTuner, 0, 1024, 0, TOTAL_STATIONS);
   if (currentStation >= TOTAL_STATIONS) currentStation = TOTAL_STATIONS - 1;
+
+  lastRawVol = analogRead(PIN_POT_VOL);
+  lastButtonState = digitalRead(PIN_BTN_STOP);
 }
 
 void loop() {
