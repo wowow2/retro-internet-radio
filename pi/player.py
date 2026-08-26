@@ -21,6 +21,7 @@ class RadioPlayer:
         self.proc: Optional[subprocess.Popen] = None
         self.station_idx: int = -1
         self._is_paused: bool = False
+        self.volume = config.DEFAULT_VOLUME
 
     def _send_ipc(self, command: list) -> bool:
         """Sends an instant JSON command to running mpv process (<5ms)."""
@@ -63,7 +64,7 @@ class RadioPlayer:
             "mpv",
             "--no-video",
             f"--input-ipc-server={MPV_SOCKET}",
-            f"--volume={config.DEFAULT_VOLUME}",
+            f"--volume={self.volume}",
             "--ao=alsa",
             "--audio-device=alsa/plughw:Loopback,0,0",
             "--audio-format=s16",
@@ -135,3 +136,8 @@ class RadioPlayer:
             else:
                 target_idx = self.station_idx if self.station_idx >= 0 else 0
                 self.tune(target_idx, force=True)
+
+    def set_volume(self, level: int) -> None:
+        """Instantly changes volume over IPC socket without pausing audio."""
+        self.volume = max(0, min(100, level))
+        self._send_ipc(["set_property", "volume", self.volume])
