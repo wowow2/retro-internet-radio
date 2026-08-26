@@ -2,7 +2,7 @@
 config.py - Global constants and configuration for the radio engine.
 """
 
-SERIAL_BAUD_RATE = 9600
+SERIAL_BAUD_RATE = 115200
 SERIAL_READ_TIMEOUT = 1.0
 ARDUINO_RESET_WAIT = 2.0      # Seconds to allow bootloader reset
 LCD_WRITE_DELAY = 0.05        # Delay between sequential line writes

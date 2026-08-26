@@ -70,6 +70,7 @@ class RadioPlayer:
             f"--input-ipc-server={MPV_SOCKET}",
             f"--volume={self.volume}",
             "--ao=alsa",
+            "--audio-buffer=0.05",
             "--audio-device=alsa/plughw:Loopback,0,0",
             "--audio-format=s16",
             "--demuxer-lavf-probesize=32768",

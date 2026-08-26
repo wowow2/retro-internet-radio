@@ -17,7 +17,7 @@ const int PIN_BTN_STOP  = 2;
 
 const int TOTAL_STATIONS       = 8;
 const int ADC_JITTER_DEADBAND  = 6;
-const unsigned long TUNE_SETTLE_MS  = 75;
+const unsigned long TUNE_SETTLE_MS  = 40;
 const unsigned long BTN_DEBOUNCE_MS = 20;
 const unsigned long VOL_THROTTLE_MS = 30;
 
@@ -120,7 +120,7 @@ void checkSerial() {
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   pinMode(PIN_BTN_STOP, INPUT_PULLUP);
 
   lcd.begin(16, 2);
