@@ -57,8 +57,8 @@ uint8_t serialLineLen = 0;
 // LCD Helpers
 void updateLCD(int line, const char* text) {
   if (line != 1 && line != 2) return;
-  char buffer[LCD_COLS + 1];
-  snprintf(buffer, sizeof(buffer), "%-*.*s", LCD_COLS, LCD_COLS, text);
+  char buffer[17];
+  snprintf(buffer, sizeof(buffer), "%-16.16s", text);
   lcd.setCursor(0, line - 1);
   lcd.print(buffer);
 }
