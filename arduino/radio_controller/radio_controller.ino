@@ -19,7 +19,7 @@ const unsigned long TUNE_SETTLE_MS = 40;
 
 // Button Timing Configuration
 const unsigned long BTN_DEBOUNCE_MS   = 25;
-const unsigned long HOLD_INITIAL_MS   = 600; // Hold time before volume cycling starts
+const unsigned long HOLD_INITIAL_MS   = 900; // Hold time before volume cycling starts
 const unsigned long HOLD_REPEAT_MS    = 450; // Speed of volume cycling while held
 
 LiquidCrystal lcd(PIN_LCD_RS, PIN_LCD_EN, PIN_LCD_D4, PIN_LCD_D5, PIN_LCD_D6, PIN_LCD_D7);
