@@ -1,9 +1,6 @@
-/**
- * radio_controller.ino 
- */
-
 #include <LiquidCrystal.h>
 
+// LCD Pins
 const int PIN_LCD_RS = 7;
 const int PIN_LCD_EN = 8;
 const int PIN_LCD_D4 = 9;
@@ -11,30 +8,35 @@ const int PIN_LCD_D5 = 10;
 const int PIN_LCD_D6 = 11;
 const int PIN_LCD_D7 = 12;
 
+// Control Pins
 const int PIN_POT_TUNER = A0;
-const int PIN_POT_VOL   = A1;
-const int PIN_BTN_STOP  = 2;
+const int PIN_BTN_CTRL  = 2;
 
-const int TOTAL_STATIONS       = 8;
-const int ADC_JITTER_DEADBAND  = 6;
-const int VOL_ADC_DEADBAND     = 12;
-const unsigned long TUNE_SETTLE_MS  = 40;
-const unsigned long BTN_DEBOUNCE_MS = 20;
-const unsigned long VOL_THROTTLE_MS = 100;
+// Tuner Configuration
+const int TOTAL_STATIONS          = 8;
+const int ADC_JITTER_DEADBAND     = 6;
+const unsigned long TUNE_SETTLE_MS = 40;
+
+// Button Timing Configuration
+const unsigned long BTN_DEBOUNCE_MS   = 25;
+const unsigned long HOLD_INITIAL_MS   = 600; // Hold time before volume cycling starts
+const unsigned long HOLD_REPEAT_MS    = 450; // Speed of volume cycling while held
 
 LiquidCrystal lcd(PIN_LCD_RS, PIN_LCD_EN, PIN_LCD_D4, PIN_LCD_D5, PIN_LCD_D6, PIN_LCD_D7);
 
+// Tuner State
 int currentStation = -1;
 int lastCommittedStation = -1;
 int lastRawTuner = -1;
 unsigned long settleStartTime = 0;
 
-int lastCommittedVol = -1;
-int lastRawVol = -1;
-unsigned long lastVolSend = 0;
-
+// Button & Volume State
+int currentVol = 100;
 bool lastButtonState = HIGH;
+unsigned long btnPressStartTime = 0;
 unsigned long lastButtonDebounce = 0;
+unsigned long lastVolStepTime = 0;
+bool isHolding = false;
 
 String serialBuffer = "";
 
@@ -68,36 +70,46 @@ void checkTuner() {
   }
 }
 
-void checkVolume() {
-  if (millis() - lastVolSend < VOL_THROTTLE_MS) return;
-  analogRead(PIN_POT_VOL);
-  int raw = analogRead(PIN_POT_VOL);
-  if (abs(raw - lastRawVol) > VOL_ADC_DEADBAND) {
-    int vol = map(raw, 0, 1023, 0, 100);
-    if (abs(vol - lastCommittedVol) >= 2) {
-      lastRawVol = raw;
-      Serial.print("VOL:");
-      Serial.println(vol);
-      lastCommittedVol = vol;
-      lastVolSend = millis();
-    }
-  }
+void cycleVolume() {
+  currentVol += 20;
+  if (currentVol > 100) currentVol = 20;
+
+  Serial.print("VOL:");
+  Serial.println(currentVol);
 }
 
 void checkButton() {
-  int reading = digitalRead(PIN_BTN_STOP);
-  if (reading != lastButtonState) {
+  int reading = digitalRead(PIN_BTN_CTRL);
+
+  // Button just pressed down
+  if (reading == LOW && lastButtonState == HIGH && (millis() - lastButtonDebounce > BTN_DEBOUNCE_MS)) {
+    btnPressStartTime = millis();
     lastButtonDebounce = millis();
+    isHolding = false;
   }
-  if ((millis() - lastButtonDebounce) > BTN_DEBOUNCE_MS) {
-    static int confirmedState = HIGH;
-    if (reading != confirmedState) {
-      confirmedState = reading;
-      if (confirmedState == LOW) {
-        Serial.println("CMD:TOGGLE");
-      }
+
+  // Button is currently held down
+  if (reading == LOW && btnPressStartTime > 0) {
+    if (!isHolding && (millis() - btnPressStartTime >= HOLD_INITIAL_MS)) {
+      isHolding = true;
+      cycleVolume();
+      lastVolStepTime = millis();
+    } else if (isHolding && (millis() - lastVolStepTime >= HOLD_REPEAT_MS)) {
+      cycleVolume();
+      lastVolStepTime = millis();
     }
   }
+
+  // Button just released
+  if (reading == HIGH && lastButtonState == LOW && (millis() - lastButtonDebounce > BTN_DEBOUNCE_MS)) {
+    lastButtonDebounce = millis();
+    if (!isHolding && (millis() - btnPressStartTime >= BTN_DEBOUNCE_MS)) {
+      Serial.println("CMD:TOGGLE");
+    }
+    btnPressStartTime = 0;
+    isHolding = false;
+  }
+
   lastButtonState = reading;
 }
 
@@ -123,7 +135,7 @@ void checkSerial() {
 
 void setup() {
   Serial.begin(115200);
-  pinMode(PIN_BTN_STOP, INPUT_PULLUP);
+  pinMode(PIN_BTN_CTRL, INPUT_PULLUP);
 
   lcd.begin(16, 2);
   lcd.clear();
@@ -134,14 +146,11 @@ void setup() {
   currentStation = map(lastRawTuner, 0, 1024, 0, TOTAL_STATIONS);
   if (currentStation >= TOTAL_STATIONS) currentStation = TOTAL_STATIONS - 1;
 
-  lastRawVol = analogRead(PIN_POT_VOL);
-  lastCommittedVol = map(lastRawVol, 0, 1023, 0, 100);
-  lastButtonState = digitalRead(PIN_BTN_STOP);
+  lastButtonState = digitalRead(PIN_BTN_CTRL);
 }
 
 void loop() {
   checkSerial();
   checkTuner();
-  checkVolume();
   checkButton();
 }
