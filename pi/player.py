@@ -166,16 +166,15 @@ class RadioPlayer:
         self._overlay_until = time.monotonic() + config.VOLUME_DISPLAY_TIMEOUT
         self.lcd.show_volume(self.volume)
 
-    def tick(self) -> None:
-        """Restores L2 after volume overlay expires. Call every main loop."""
-        if self._overlay_active and time.monotonic() >= self._overlay_until:
-            self._overlay_active = False
-            if self._is_paused:
-                restore = "* Paused *"
-            elif self._saved_sub:
-                restore = self._saved_sub
-            else:
-                station = stations.get_station(self.station_idx)
-                restore = station.sub if station else "Turn Dial to Tune"
-            if self.lcd.link.is_connected:
-                self.lcd.write_line(2, restore)
+    def restore_subtitle(self) -> None:
+        """Instantly restores Line 2 when button is released."""
+        self._overlay_active = False
+        if self._is_paused:
+            restore = "* Paused *"
+        elif self._saved_sub:
+            restore = self._saved_sub
+        else:
+            station = stations.get_station(self.station_idx)
+            restore = station.sub if station else "Turn Dial to Tune"
+        if self.lcd.link.is_connected:
+            self.lcd.write_line(2, restore)

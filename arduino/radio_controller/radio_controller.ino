@@ -103,9 +103,13 @@ void checkButton() {
   // Button just released
   if (reading == HIGH && lastButtonState == LOW && (millis() - lastButtonDebounce > BTN_DEBOUNCE_MS)) {
     lastButtonDebounce = millis();
-    if (!isHolding && (millis() - btnPressStartTime >= BTN_DEBOUNCE_MS)) {
+
+    if (isHolding) {
+      Serial.println("VOL:DONE");
+    } else if (millis() - btnPressStartTime >= BTN_DEBOUNCE_MS) {
       Serial.println("CMD:TOGGLE");
     }
+
     btnPressStartTime = 0;
     isHolding = false;
   }
