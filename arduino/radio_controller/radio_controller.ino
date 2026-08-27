@@ -18,9 +18,9 @@ const int ADC_JITTER_DEADBAND     = 6;
 const unsigned long TUNE_SETTLE_MS = 40;
 
 // Button Timing Configuration
-const unsigned long BTN_DEBOUNCE_MS   = 25;
-const unsigned long HOLD_INITIAL_MS   = 900; // Hold time before volume cycling starts
-const unsigned long HOLD_REPEAT_MS    = 450; // Speed of volume cycling while held
+const unsigned long BTN_DEBOUNCE_MS   = 35;
+const unsigned long HOLD_INITIAL_MS   = 700;
+const unsigned long HOLD_REPEAT_MS    = 400;
 
 LiquidCrystal lcd(PIN_LCD_RS, PIN_LCD_EN, PIN_LCD_D4, PIN_LCD_D5, PIN_LCD_D6, PIN_LCD_D7);
 
@@ -71,8 +71,8 @@ void checkTuner() {
 }
 
 void cycleVolume() {
-  currentVol += 20;
-  if (currentVol > 100) currentVol = 20;
+  currentVol += 5;
+  if (currentVol > 100) currentVol = 5;
 
   Serial.print("VOL:");
   Serial.println(currentVol);
