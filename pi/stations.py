@@ -5,10 +5,8 @@ cache and guaranteed fallback URLs so the radio never goes silent.
 """
 
 import requests
-import json
-import os
 from dataclasses import dataclass
-from typing import List, Optional, Dict
+from typing import List, Optional
 
 API_SERVERS = [
     "https://de1.api.radio-browser.info/json",

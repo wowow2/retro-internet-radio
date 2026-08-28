@@ -128,7 +128,6 @@ class RadioPlayer:
                 self._is_paused = False
                 return
 
-        # 3. Otherwise spawn fresh mpv
         self._spawn_mpv(station.resolved_url)
 
     def toggle(self) -> None:

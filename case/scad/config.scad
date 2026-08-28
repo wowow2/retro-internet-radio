@@ -3,7 +3,7 @@
 $fn = 60;
 
 // ENCLOSURE DIMENSIONS (mm)
-box_w = 240;   // Width (X)
+box_w = 228;   // Width (X)
 box_d = 145;   // Depth (Y)
 box_h = 140;   // Height (Z)
 wall  = 2.8;   // Wall thickness
@@ -20,11 +20,10 @@ spk_x = 62.5;
 spk_z = box_h / 2;
 
 // 1602 LCD WINDOW
-lcd_win_w = 72;
-lcd_win_h = 25;
-lcd_x     = 180;
+lcd_win_w = 73;
+lcd_win_h = 25.5;
+lcd_x     = 175;
 lcd_z     = 105;
-
 // CONTROLS
 pot_x     = 155;
 pot_z     = 35;

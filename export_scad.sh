@@ -27,26 +27,6 @@ openscad -o case/preview/preview.png case/scad/assembly.scad \
     --autocenter \
     --colorscheme=Cornfield \
     --preview
-
-echo "[6/6] Generating Internal Fit Simulations (X-Ray & Cutaway)..."
-# X-Ray simulation
-openscad -o case/preview/simulation_xray.png case/scad/simulation.scad \
-    -D 'view_mode="xray"' \
-    --imgsize=1920,1080 \
-    --viewall \
-    --autocenter \
-    --colorscheme=Cornfield \
-    --preview
-
-# Cutaway top-down cross section
-openscad -o case/preview/simulation_cutaway.png case/scad/simulation.scad \
-    -D 'view_mode="cutaway"' \
-    --imgsize=1920,1080 \
-    --viewall \
-    --autocenter \
-    --colorscheme=Cornfield \
-    --preview
-
 echo "=========================================="
 echo " Done! All files generated:"
 echo "   -> case/stl/front_body.stl"
@@ -54,6 +34,4 @@ echo "   -> case/stl/back_lid.stl"
 echo "   -> case/stl/button_plunger.stl"
 echo "   -> case/stl/full_assembly.stl"
 echo "   -> case/preview/preview.png"
-echo "   -> case/preview/simulation_xray.png"
-echo "   -> case/preview/simulation_cutaway.png"
 echo "=========================================="
