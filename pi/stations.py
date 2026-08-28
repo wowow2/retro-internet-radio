@@ -21,9 +21,6 @@ HEADERS = {
     "User-Agent": "RetroInternetRadio/1.0 (RaspberryPi; Canada)"
 }
 
-CACHE_FILE = os.path.expanduser("~/.radio_cache.json")
-
-
 @dataclass
 class RadioStation:
     name: str
@@ -83,25 +80,6 @@ STATION_LIST: List[RadioStation] = [
     ),
 ]
 
-
-def _load_cache() -> Dict[str, str]:
-    if os.path.exists(CACHE_FILE):
-        try:
-            with open(CACHE_FILE, "r") as f:
-                return json.load(f)
-        except (json.JSONDecodeError, OSError):
-            pass
-    return {}
-
-
-def _save_cache(cache: Dict[str, str]) -> None:
-    try:
-        with open(CACHE_FILE, "w") as f:
-            json.dump(cache, f)
-    except OSError:
-        pass
-
-
 def _fetch_from_api(uuid: str) -> Optional[str]:
     """Tries each mirror in turn, returns the resolved URL or None."""
     for server in API_SERVERS:
@@ -119,32 +97,24 @@ def _fetch_from_api(uuid: str) -> Optional[str]:
     return None
 
 
-def _resolve_one(station: RadioStation, cache: Dict[str, str]) -> tuple[str, str]:
+def _resolve_one(station: RadioStation) -> tuple[str, str]:
     """Resolves a single station's URL. Returns (url, source) where
-    source is one of 'API', 'CACHE', 'FALLBACK'. Mutates `cache` in
-    place when a fresh API result is found."""
+    source is one of 'API', 'FALLBACK'."""
     if station.uuid:
         live_url = _fetch_from_api(station.uuid)
         if live_url:
-            cache[station.uuid] = live_url
             return live_url, "API"
-        if station.uuid in cache:
-            return cache[station.uuid], "CACHE"
 
     return station.fallback_url, "FALLBACK"
 
 
 def resolve_all_stations() -> None:
     """Resolves live URLs from the API on boot, falling back to
-    cache, then to the guaranteed fallback URL."""
-    cache = _load_cache()
-
+    the guaranteed fallback URL."""
     print("[SYSTEM] Resolving live station URLs via Radio-Browser API...")
     for station in STATION_LIST:
-        station.resolved_url, source = _resolve_one(station, cache)
+        station.resolved_url, source = _resolve_one(station)
         print(f"  [{source}] {station.name:<16} -> {station.resolved_url}")
-
-    _save_cache(cache)
 
 
 def get_station(index: int) -> Optional[RadioStation]:
