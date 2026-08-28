@@ -70,10 +70,10 @@ STATION_LIST: List[RadioStation] = [
         fallback_url="http://stream.live.vc.bbcmedia.co.uk/bbc_world_service",
     ),
     RadioStation(
-        name="NPR / WNYC",
-        sub="Stories & Ideas",
-        uuid="f34ae431-42cd-4ef1-8a24-f4eca8a70cc1",
-        fallback_url="https://fm939.wnyc.org/wnycfm",
+        name="Retro Radio OTR",
+        sub="Comedy & Mystery",
+        uuid="",
+        fallback_url="http://stream.radio.macinmind.com:8000/listen",
     ),
     RadioStation(
         name="Lofi Girl",
