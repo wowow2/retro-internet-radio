@@ -70,8 +70,8 @@ STATION_LIST: List[RadioStation] = [
         fallback_url="http://stream.live.vc.bbcmedia.co.uk/bbc_world_service",
     ),
     RadioStation(
-        name="Retro Radio OTR",
-        sub="Comedy & Mystery",
+        name="ABN Antioch OTR",
+        sub="1610 AM Mystery",
         uuid="",
         fallback_url="http://stream.radio.macinmind.com:8000/listen",
     ),
