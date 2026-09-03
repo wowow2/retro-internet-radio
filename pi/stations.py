@@ -41,10 +41,10 @@ STATION_LIST: List[RadioStation] = [
         fallback_url="https://corus.leanstream.co/CHEDAM-MP3",
     ),
     RadioStation(
-        name="96.3 The Breeze",
-        sub="Classic Pop/Piano",
-        uuid="962287f2-0601-11e8-ae97-52543be04c81",
-        fallback_url="https://stingray.leanstream.co/CKRAFM-MP3",
+        name="Jazz 365",
+        sub="Jazz Music",
+        uuid="",
+        fallback_url="https://streaming.live365.com/a74112",
     ),
     RadioStation(
         name="CKUA Radio",
